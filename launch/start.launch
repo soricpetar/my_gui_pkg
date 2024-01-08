@@ -1,0 +1,16 @@
+<launch>
+  <!-- Node 1 -->
+  <node pkg="my_gui_pkg" type="ControllerNode.py" name="ControllerNode" output="screen">
+    <!-- Any ROS parameters can be set here -->
+  </node>
+
+  <!-- Node 2 -->
+  <node pkg="my_gui_pkg" type="gui_node.py" name="mainwindow" output="screen">
+    <!-- Any ROS parameters can be set here -->
+  </node>
+
+  <node pkg="my_gui_pkg" type = "StateService.py" name = "StateService" output = "screen">
+  </node>
+
+  <!-- More nodes can be added here following the same structure -->
+</launch>

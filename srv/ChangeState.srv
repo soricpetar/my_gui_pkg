@@ -1,0 +1,7 @@
+S# Request
+int64 desired_state
+---
+# Response part
+bool success
+int64 current_state
+string message
