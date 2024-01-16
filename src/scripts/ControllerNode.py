@@ -21,6 +21,12 @@ class Controller:
         self.click_cnt = 0
         #self.scene = moveit_commander.PlanningSceneInterface()
         self.points = []
+        self.num_of_callibration_points = 500
+        self.callibration_data_poses = list()
+        self.callibration_index = 0
+        self.callibration_data_collected_flag = False
+        self.T_callibrated = []
+        self.callibration_done_flag = False
 
     def click_callback(self, click: Joy):
         if click.buttons[0] == 1:
@@ -28,7 +34,18 @@ class Controller:
             self.num_clicks_pub.publish(self.click_cnt)
 
     def pose_callback(self, pose: PoseStamped):
-        self.pose = pose
+        
+        if self.callibration_done_flag == True:
+            self.pose = pose_to_T(self.pose) @ self.T_callibrated
+        else:
+            self.pose = pose
+        
+        if self.current_state == 3 and self.callibration_index < self.num_of_callibration_points and not(self.callibration_data_collected_flag):
+            self.callibration_data_poses.append(pose_to_T(pose))
+            self.callibration_index = self.callibration_index  + 1
+            
+        if self.callibration_index >= self.num_of_callibration_points:
+            self.callibration_data_collected_flag = True
 
     def handle_change_state(self, request):
         self.current_state = request.desired_state
@@ -54,8 +71,10 @@ class Controller:
                 #plane(self.scene, self.points)
                 self.click_cnt = 0
         elif self.current_state == 3:
+            if self.callibration_data_collected_flag:
+                self.T_callibrated = CalculateCalipenTransformation(self.callibration_data_poses)
+                self.callibration_done_flag = True
             
-            pass  # calibrate
 
 if __name__ == '__main__':
     try:
