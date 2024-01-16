@@ -135,10 +135,18 @@ class CallipenCalibration:
             else:
                 break
 
+def T_to_pose(T):
 
-def pose_to_T(pose):
+    pose = Pose()
+    pose.position.x = T[0][3]
+    pose.position.y = T[1][3]
+    pose.position.z = T[2][3]
 
-    pose = data.pose
+    return pose
+
+def pose_to_T(poseStamp : PoseStamped):
+
+    pose = poseStamp.pose
     q1 = pose.orientation.x
     q2 = pose.orientation.y
     q3 = pose.orientation.z
@@ -186,7 +194,7 @@ def f_optimizePointOrientation(T_init, callibration_data_poses):
     P1 = T_init[:3, 3]   # Initial position vector
 
     # Optimize position using fmin
-    P1_optimized = fmin(func=self.objectiveFunPosition, x0=P1, args=(R1, callibration_data_poses), xtol=1e-4, ftol=1e-4,  disp=True)
+    P1_optimized = fmin(func=objectiveFunPosition, x0=P1, args=(R1, callibration_data_poses), xtol=1e-4, ftol=1e-4,  disp=True)
 
     print("optimization finished")
     print(P1_optimized)
