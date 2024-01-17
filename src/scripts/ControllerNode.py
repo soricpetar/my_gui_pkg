@@ -6,21 +6,28 @@ from helpers import cube, plane
 from sensor_msgs.msg import Joy
 from geometry_msgs.msg import PoseStamped, Pose
 import moveit_commander
-from my_gui_pkg.srv import ChangeState, ChangeStateResponse
-from my_gui_pkg.msg import service_req, service_res
+from my_gui_pkg.srv import ChangeState, ChangeStateResponse, ChangeStateRequest
+from my_gui_pkg.msg import service_req
+import rospy
+from geometry_msgs.msg import PoseStamped
+from sensor_msgs.msg import Joy, PointCloud
+import threading
 
 from andrej_skripta import pose_to_T
 from andrej_skripta import CalculateCalipenTransformation, T_to_pose
 
+
+shutdown_flag = threading.Event()
 class Controller:
     def __init__(self):
-        self.kalipen_sub = rospy.Subscriber('/kalipen/joy', Joy, self.click_callback, queue_size=1)
+        rospy.loginfo("Controller started")
+        #self.kalipen_sub = rospy.Subscriber('/kalipen/joy', Joy, self.click_callback, queue_size=1)
         self.optitrack_sub = rospy.Subscriber('/vrpn_client_node/Kalipen/pose', PoseStamped, self.pose_callback, queue_size=1)
         self.state_pub = rospy.Publisher('state', service_req, queue_size=1)
         self.change_state_service = rospy.Service('change_state', ChangeState, self.handle_change_state)
         self.transformed_pose_publisher = rospy.Publisher('/Kalipen/pose_transformed', Pose, queue_size=1)
 
-        self.current_state = 4
+        self.current_state = 2
         self.clicked = 0
         self.click_cnt = 0
         #self.scene = moveit_commander.PlanningSceneInterface()
@@ -32,22 +39,15 @@ class Controller:
         self.T_callibrated = []
         self.callibration_done_flag = False
         self.pose_transformed = Pose()
-    def click_callback(self, click: Joy):
-        if click.buttons[0] == 1:
-            self.click_cnt += 1
-            self.num_clicks_pub.publish(self.click_cnt)
 
     def pose_callback(self, poseStamp: PoseStamped):
         
         self.pose = poseStamp
-        #print(self.callibration_done_flag)
-        if self.callibration_done_flag == True:
-            #print(pose_to_T(self.pose) @ self.T_callibrated)
+        if self.callibration_done_flag:
             self.pose_transformed= T_to_pose(pose_to_T(self.pose) @ self.T_callibrated)
-            print(self.pose_transformed)
             self.transformed_pose_publisher.publish(self.pose_transformed)
          
-        if self.current_state == 0 and self.callibration_index < self.num_of_callibration_points and not(self.callibration_data_collected_flag):
+        if self.current_state == 0 and not(self.callibration_data_collected_flag):
             self.callibration_data_poses.append(pose_to_T(self.pose))
             self.callibration_index = self.callibration_index  + 1
             print(self.callibration_index)
@@ -65,32 +65,82 @@ class Controller:
         state_msg = service_req()  # Assuming service_req is a ROS message type for the state
         state_msg.desired_state = self.current_state  # Set the state field (assuming it's named 'state')
         self.state_pub.publish(state_msg)  # Publish the message
+        rospy.loginfo("state published")
 
     def run(self):
-        while not rospy.is_shutdown():
+        while not rospy.is_shutdown() and not shutdown_flag.is_set():
             if self.current_state == 0:
                 if self.callibration_data_collected_flag and not(self.callibration_done_flag):
                     print("Calibration has started")
                     self.T_callibrated = CalculateCalipenTransformation(self.callibration_data_poses)
                     print(self.T_callibrated)
+                    rospy.loginfo("Calibration completed")
                     self.callibration_done_flag = True
-            elif self.current_state == 1:  # cube
-                if self.click_cnt == 4:
-                    #cube(self.scene, self.points)
-                    self.click_cnt = 0
-            elif self.current_state == 2:  # plane
-                if self.click_cnt == 3:
-                    #plane(self.scene, self.points)
-                    self.click_cnt = 0
-            elif self.current_state == 3:
+            elif self.current_state == 1:  # collect
+                pass
+            elif self.current_state == 2: # idle
                 pass # idle 
 
+
+class KalipenController: 
+    def pose_callback(self, pose: PoseStamped):
+        #rospy.loginfo(pose.pose)
+        if(self.collect):
+            self.points.points.append(pose.pose.position)
+
+    def click_callback(self, click: Joy):
+        #rospy.loginfo("click_callback")
+        if (click.buttons[0] == 1):
+            rospy.loginfo("click registered")
+            self.collect = True
+            self.masterController.handle_change_state(ChangeStateRequest(desired_state = 1))
+
+        elif (click.buttons[0] == 0):
+            self.masterController.handle_change_state(ChangeStateRequest(desired_state = 2))
+            self.collect = False
+            self.pub.publish(self.points)
+            self.rate.sleep()
+            self.points = PointCloud()
+
+    def __init__(self, MasterController : Controller):
+        self.masterController = MasterController
+
+        rospy.loginfo("Controller started")
+        rospy.Subscriber('/Kalipen/pose_transformed', Pose, self.pose_callback, queue_size=1)
+        rospy.Subscriber('/kalipen/joy', Joy, self.click_callback, queue_size=1)
+        self.pub = rospy.Publisher('/obstacle', PointCloud, queue_size=10)
+
+        self.rate = rospy.Rate(100)
+
+        self.collect = False
+        self.points = PointCloud()
+
+    def run(self):
+        while not rospy.is_shutdown() and not shutdown_flag.is_set():
+            pass
+
+def shutdown_hook():
+    shutdown_flag.set()
+    rospy.loginfo("Shutting down...")
 
 if __name__ == '__main__':
     try:
         moveit_commander.roscpp_initialize(sys.argv)
         rospy.init_node('controller_node')
+        rospy.on_shutdown(shutdown_hook)
+
         controller = Controller()
-        controller.run()
+        kali_controller = KalipenController(controller)
+
+        thread1 = threading.Thread(target=controller.run)
+        thread2 = threading.Thread(target=kali_controller.run)
+
+        thread1.start()
+        thread2.start()
+
+        thread1.join()
+        thread2.join()
+
     except rospy.ROSInterruptException:
+        shutdown_hook()
         print('Exception')
