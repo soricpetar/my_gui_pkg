@@ -20,7 +20,7 @@ from andrej_skripta import CalculateCalipenTransformation, T_to_pose
 shutdown_flag = threading.Event()
 class Controller:
     def __init__(self):
-        rospy.loginfo("Controller started")
+        rospy.loginfo("Main Controller started")
         #self.kalipen_sub = rospy.Subscriber('/kalipen/joy', Joy, self.click_callback, queue_size=1)
         self.optitrack_sub = rospy.Subscriber('/vrpn_client_node/Kalipen/pose', PoseStamped, self.pose_callback, queue_size=1)
         self.state_pub = rospy.Publisher('state', service_req, queue_size=1)
@@ -105,7 +105,7 @@ class KalipenController:
     def __init__(self, MasterController : Controller):
         self.masterController = MasterController
 
-        rospy.loginfo("Controller started")
+        rospy.loginfo("Kalipen Controller started")
         rospy.Subscriber('/Kalipen/pose_transformed', Pose, self.pose_callback, queue_size=1)
         rospy.Subscriber('/kalipen/joy', Joy, self.click_callback, queue_size=1)
         self.pub = rospy.Publisher('/obstacle', PointCloud, queue_size=10)

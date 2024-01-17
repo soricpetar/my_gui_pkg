@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from my_gui_pkg.srv import ChangeState, ChangeStateRequest, ChangeStateResponse
@@ -69,7 +70,6 @@ class Ui_MainWindow(object):
         self.stateListener = rospy.Subscriber('/state', service_req, self.set_active_state_callback, queue_size=1)
 
     def set_active_state(self, state):
-        rospy.loginfo(state)
         self.current_state = state
         for button in self.buttons:
             if self.buttons.index(button) == state:
