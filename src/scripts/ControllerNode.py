@@ -1,20 +1,16 @@
 #!/usr/bin/env python3
 
-import rospy
 import sys
-from helpers import cube, plane
-from sensor_msgs.msg import Joy
-from geometry_msgs.msg import PoseStamped, Pose
-import moveit_commander
-from my_gui_pkg.srv import ChangeState, ChangeStateResponse, ChangeStateRequest
-from my_gui_pkg.msg import service_req
-import rospy
-from geometry_msgs.msg import PoseStamped
-from sensor_msgs.msg import Joy, PointCloud
 import threading
 
-from andrej_skripta import pose_to_T
-from andrej_skripta import CalculateCalipenTransformation, T_to_pose
+import rospy
+from geometry_msgs.msg import PoseStamped, Pose
+from sensor_msgs.msg import Joy, PointCloud
+import moveit_commander
+
+from my_gui_pkg.srv import ChangeState, ChangeStateResponse, ChangeStateRequest
+from my_gui_pkg.msg import service_req
+from andrej_skripta import pose_to_T, CalculateCalipenTransformation, T_to_pose
 
 
 shutdown_flag = threading.Event()
