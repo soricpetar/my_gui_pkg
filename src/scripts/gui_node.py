@@ -1,7 +1,9 @@
+#!/usr/bin/env python3
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from my_gui_pkg.srv import ChangeState, ChangeStateRequest, ChangeStateResponse
 import rospy
+from my_gui_pkg.msg import service_req
 import sys
 
 class Ui_MainWindow(object):
@@ -23,12 +25,9 @@ class Ui_MainWindow(object):
         self.calibrateButton = QtWidgets.QPushButton(self.centralwidget)
         self.calibrateButton.setGeometry(QtCore.QRect(70, 50, 141, 41))
         self.calibrateButton.setObjectName("calibrateButton")
-        self.planeButton = QtWidgets.QPushButton(self.centralwidget)
-        self.planeButton.setGeometry(QtCore.QRect(70, 110, 141, 41))
-        self.planeButton.setObjectName("planeButton")
-        self.cubeButton = QtWidgets.QPushButton(self.centralwidget)
-        self.cubeButton.setGeometry(QtCore.QRect(70, 170, 141, 41))
-        self.cubeButton.setObjectName("cubeButton")
+        self.collectButton = QtWidgets.QPushButton(self.centralwidget)
+        self.collectButton.setGeometry(QtCore.QRect(70, 110, 141, 41))
+        self.collectButton.setObjectName("collectButton")
         self.idleButton = QtWidgets.QPushButton(self.centralwidget)
         self.idleButton.setGeometry(QtCore.QRect(70, 230, 141, 41))
         self.idleButton.setObjectName("idleButton")
@@ -40,7 +39,8 @@ class Ui_MainWindow(object):
         self.verticalLayout.setObjectName("verticalLayout")
         self.label_2 = QtWidgets.QLabel(self.verticalLayoutWidget)
         self.label_2.setObjectName("label_2")
-        self.verticalLayout.addWidget(self.label_2)
+        self.label_2.setFixedWidth(400)
+        self.verticalLayout.addWidget(self.label_2, 3)
         self.clicksLabel = QtWidgets.QLabel(self.verticalLayoutWidget)
         self.clicksLabel.setObjectName("clicksLabel")
         self.verticalLayout.addWidget(self.clicksLabel)
@@ -54,22 +54,20 @@ class Ui_MainWindow(object):
 
         #Connect button signals to their respective slots
         self.calibrateButton.clicked.connect(lambda: self.change_state(0))
-        self.planeButton.clicked.connect(lambda: self.change_state(1))
-        self.cubeButton.clicked.connect(lambda: self.change_state(2))
-        self.idleButton.clicked.connect(lambda: self.change_state(3))
+        self.collectButton.clicked.connect(lambda: self.change_state(1))
+        self.idleButton.clicked.connect(lambda: self.change_state(2))
 
 
-
-        self.buttons = [self.calibrateButton, self.planeButton, self.cubeButton, self.idleButton]
+        self.buttons = [self.calibrateButton, self.collectButton, self.idleButton]
 
         self.state_names = {
             0: "Calibrate",
-            1: "Plane",
-            2: "Cube",
-            3: "Idle"
+            1: "Collect",
+            2: "Idle"
         }
-        self.current_state = 3  # Initial state
-        self.update_mode_label(self.current_state)
+        self.set_active_state(2)
+
+        self.stateListener = rospy.Subscriber('/state', service_req, self.set_active_state_callback, queue_size=1)
 
     def set_active_state(self, state):
         self.current_state = state
@@ -79,6 +77,12 @@ class Ui_MainWindow(object):
             else:
                 button.setStyleSheet("")
         self.update_mode_label(state)
+    
+    def set_active_state_callback(self, msg):
+        desired_state = msg.desired_state
+        rospy.loginfo(desired_state)
+        self.set_active_state(desired_state)
+
 
     def update_mode_label(self, state):
         # Update the mode label with the name of the current state
@@ -105,11 +109,10 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.modeLabel.setText(_translate("MainWindow", "Kalipen mode : "))
         self.calibrateButton.setText(_translate("MainWindow", "Calibrate"))
-        self.planeButton.setText(_translate("MainWindow", "Plane"))
-        self.cubeButton.setText(_translate("MainWindow", "Cube"))
         self.idleButton.setText(_translate("MainWindow", "Idle"))
-        self.label_2.setText(_translate("MainWindow", "Calibration"))
-        self.clicksLabel.setText(_translate("MainWindow", "Num clicks : "))
+        self.collectButton.setText(_translate("MainWindow", "Collect"))
+        self.label_2.setText(_translate("MainWindow", "Calibration status : Not calibrating currently"))
+        self.clicksLabel.setText(_translate("MainWindow", "Num clicks : 0"))
 
 
 
