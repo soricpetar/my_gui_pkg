@@ -39,6 +39,7 @@ class Controller:
         self.T_callibrated = []
         self.callibration_done_flag = False
         self.pose_transformed = Pose()
+        self.start_calib_flag = False
 
     def pose_callback(self, poseStamp: PoseStamped):
         
@@ -47,13 +48,14 @@ class Controller:
             self.pose_transformed= T_to_pose(pose_to_T(self.pose) @ self.T_callibrated)
             self.transformed_pose_publisher.publish(self.pose_transformed)
          
-        if self.current_state == 0 and not(self.callibration_data_collected_flag):
+        if self.current_state == 0 and not(self.callibration_data_collected_flag) and self.start_calib_flag:
             self.callibration_data_poses.append(pose_to_T(self.pose))
             self.callibration_index = self.callibration_index  + 1
             print(self.callibration_index)
             
         if self.callibration_index >= self.num_of_callibration_points:
             self.callibration_data_collected_flag = True
+            self.start_calib_flag = False
 
     def handle_change_state(self, request):
         self.current_state = request.desired_state
@@ -91,9 +93,12 @@ class KalipenController:
     def click_callback(self, click: Joy):
         #rospy.loginfo("click_callback")
         if (click.buttons[0] == 1):
-            rospy.loginfo("click registered")
-            self.collect = True
-            self.masterController.handle_change_state(ChangeStateRequest(desired_state = 1))
+            if (self.masterController.current_state == 0): # start calibration
+                self.masterController.start_calib_flag = True
+            else :
+                rospy.loginfo("click registered")
+                self.collect = True
+                self.masterController.handle_change_state(ChangeStateRequest(desired_state = 1))
 
         elif (click.buttons[0] == 0):
             self.masterController.handle_change_state(ChangeStateRequest(desired_state = 2))
