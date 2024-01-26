@@ -11,7 +11,7 @@ import moveit_commander
 
 from my_gui_pkg.srv import ChangeState, ChangeStateResponse, ChangeStateRequest
 from my_gui_pkg.msg import service_req
-from andrej_skripta import pose_to_T, CalculateCalipenTransformation, T_to_pose
+from calibrationAlgo import pose_to_T, CalculateCalipenTransformation, T_to_pose
 from scipy.spatial.transform import Rotation
 from transforms3d import quaternions
 

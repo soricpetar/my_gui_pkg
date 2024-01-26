@@ -8,7 +8,7 @@ import sys
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
-        MainWindow.setObjectName("MainWindow")
+        MainWindow.setObjectName("Optidraw")
         MainWindow.resize(800, 600)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
@@ -26,7 +26,7 @@ class Ui_MainWindow(object):
         self.calibrateButton.setGeometry(QtCore.QRect(70, 50, 141, 41))
         self.calibrateButton.setObjectName("calibrateButton")
         self.collectButton = QtWidgets.QPushButton(self.centralwidget)
-        self.collectButton.setGeometry(QtCore.QRect(70, 110, 141, 41))
+        self.collectButton.setGeometry(QtCore.QRect(70, 140, 141, 41))
         self.collectButton.setObjectName("collectButton")
         self.idleButton = QtWidgets.QPushButton(self.centralwidget)
         self.idleButton.setGeometry(QtCore.QRect(70, 230, 141, 41))
@@ -37,13 +37,6 @@ class Ui_MainWindow(object):
         self.verticalLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout.setObjectName("verticalLayout")
-        self.label_2 = QtWidgets.QLabel(self.verticalLayoutWidget)
-        self.label_2.setObjectName("label_2")
-        self.label_2.setFixedWidth(400)
-        self.verticalLayout.addWidget(self.label_2, 3)
-        self.clicksLabel = QtWidgets.QLabel(self.verticalLayoutWidget)
-        self.clicksLabel.setObjectName("clicksLabel")
-        self.verticalLayout.addWidget(self.clicksLabel)
         MainWindow.setCentralWidget(self.centralwidget)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
@@ -106,13 +99,11 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("Optidraw", "Optidraw"))
         self.modeLabel.setText(_translate("MainWindow", "Kalipen mode : "))
         self.calibrateButton.setText(_translate("MainWindow", "Calibrate"))
         self.idleButton.setText(_translate("MainWindow", "Idle"))
         self.collectButton.setText(_translate("MainWindow", "Collect"))
-        self.label_2.setText(_translate("MainWindow", "Calibration status : Not calibrating currently"))
-        self.clicksLabel.setText(_translate("MainWindow", "Num clicks : 0"))
 
 
 
