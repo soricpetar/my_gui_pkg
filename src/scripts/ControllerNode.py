@@ -12,6 +12,7 @@ from my_gui_pkg.srv import ChangeState, ChangeStateResponse, ChangeStateRequest
 from my_gui_pkg.msg import service_req
 from andrej_skripta import pose_to_T, CalculateCalipenTransformation, T_to_pose
 
+import numpy as np
 
 shutdown_flag = threading.Event()
 class Controller:
@@ -28,11 +29,18 @@ class Controller:
         self.click_cnt = 0
         #self.scene = moveit_commander.PlanningSceneInterface()
         self.points = []
-        self.num_of_callibration_points = 500
+        self.num_of_callibration_points = 750
         self.callibration_data_poses = list()
         self.callibration_index = 0
         self.callibration_data_collected_flag = False
         self.T_callibrated = []
+        #self.T_callibrated = np.array([
+        #        [1.0, 0.0, 0.0, 0.00332365],
+        #        [0.0, 1.0, 0.0, 0.04175276],
+        #        [0.0, 0.0, 1.0, -0.0260784],
+        #        [0.0, 0.0, 0.0, 1.0]
+        #        ])
+        self.callibration_done_flag = True
         self.callibration_done_flag = False
         self.pose_transformed = Pose()
         self.start_calib_flag = False
@@ -52,6 +60,7 @@ class Controller:
         if self.callibration_index >= self.num_of_callibration_points:
             self.callibration_data_collected_flag = True
             self.start_calib_flag = False
+            self.callibration_index = 0
 
     def handle_change_state(self, request):
         self.current_state = request.desired_state
@@ -81,22 +90,23 @@ class Controller:
 
 
 class KalipenController: 
-    def pose_callback(self, pose: PoseStamped):
+    def pose_callback(self, pose: Pose):
         #rospy.loginfo(pose.pose)
         if(self.collect):
-            self.points.points.append(pose.pose.position)
+            self.points.points.append(pose.position)
 
     def click_callback(self, click: Joy):
         #rospy.loginfo("click_callback")
         if (click.buttons[0] == 1):
             if (self.masterController.current_state == 0): # start calibration
                 self.masterController.start_calib_flag = True
+                rospy.loginfo("Calibration should start")
             else :
                 rospy.loginfo("click registered")
                 self.collect = True
                 self.masterController.handle_change_state(ChangeStateRequest(desired_state = 1))
 
-        elif (click.buttons[0] == 0):
+        elif (click.buttons[0] == 0 and self.masterController.callibration_done_flag):
             self.masterController.handle_change_state(ChangeStateRequest(desired_state = 2))
             self.collect = False
             self.pub.publish(self.points)

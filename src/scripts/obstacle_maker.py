@@ -95,6 +95,7 @@ class Integrator:
         return np.array(filtered_positions)[:, :3]
     
     def fit_plane_and_get_normal(self, ax, data_uncentered, centroid):
+        print(data_uncentered)
         x = data_uncentered[:, :2]
         y = data_uncentered[:, 2]
         
@@ -222,18 +223,16 @@ class Integrator:
 
             ax_max_distances.set_xlabel('Angle')
             ax_max_distances.legend()
-
-
-            """ cov_m = np.cov(data_uncenterd, rowvar=False)
-            eigval, eigvec = np.linalg.eigh(cov_m)
-
-
-            y_axis=eigvec[0]/ np.linalg.norm(eigvec[0])
-            x_axis=eigvec[1]/ np.linalg.norm(eigvec[1])
-            z_axis=eigvec[2]/ np.linalg.norm(eigvec[2])
-                                                """
-
             self.centroids_list = []
+
+            #print("cube rotate", self.claculate_cube_volume(centroid, [z_axis, x_axis, y_axis], data_uncenterd, ax))
+            #cov_m = np.cov(data_uncenterd, rowvar=False)
+            #eigval, eigvec = np.linalg.eigh(cov_m)
+            #y_axis=eigvec[0]/ np.linalg.norm(eigvec[0])
+            #x_axis=eigvec[1]/ np.linalg.norm(eigvec[1])
+            #z_axis=eigvec[2]/ np.linalg.norm(eigvec[2])
+            #print("cube eigen", self.claculate_cube_volume(centroid, [z_axis, x_axis, y_axis], data_uncenterd, ax))
+
             result = minimize(lambda x: self.claculate_cube_volume(x, [z_axis, x_axis, y_axis], data_uncenterd, ax), centroid, method='Nelder-Mead', tol=1e-5)
             centroids_array = np.array(self.centroids_list)
             ax_centroids = fig.add_subplot(133)
@@ -324,16 +323,16 @@ class Integrator:
 
             #self.scene.add_box(box_name, box_pose, size=(dim1, dim2, dim3))
         
-            for size in [(0.0015, 0.0015, 0.01), (0.0015, 0.01, 0.0015), (0.01, 0.0015, 0.0015)]:
-                for i, point in enumerate(data_uncenterd):
-                    box_pose = PoseStamped()
-                    box_pose.header.frame_id = "world"
-                    box_pose.pose.position.x = point[0]
-                    box_pose.pose.position.y = point[1]
-                    box_pose.pose.position.z = point[2]
+            #for size in [(0.0015, 0.0015, 0.01), (0.0015, 0.01, 0.0015), (0.01, 0.0015, 0.0015)]:
+                #for i, point in enumerate(data_uncenterd):
+                    #box_pose = PoseStamped()
+                    #box_pose.header.frame_id = "world"
+                    #box_pose.pose.position.x = point[0]
+                    #box_pose.pose.position.y = point[1]
+                    #box_pose.pose.position.z = point[2]
                     
-                    box_name = f"point{i,size}"
-                    self.scene.add_box(box_name, box_pose, size=size) 
+                    #box_name = f"point{i,size}"
+                    #self.scene.add_box(box_name, box_pose, size=size) 
 
             #self.scene.add_box("box_0", box_pose_0, size=(0.1, 0.1, 0.1))
             #self.scene.add_box("box_1", box_pose_1, size=(0.1, 0.1, 0.1))

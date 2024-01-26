@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /home/pero/miniconda/bin/python 
 import numpy as np
 import rospy
 import moveit_commander
@@ -35,8 +35,8 @@ class Integrator:
         #print(self.clicked)
         if (self.clicked == 1):
             self.counter = 4
-            self.points.append((0,0,0))
-            self.points.append((1,2,-1))
+            self.points.append((0,1,0))
+            self.points.append((1,2,1))
             self.points.append((1,0,0))
             self.points.append((0,0,2))
 
@@ -167,11 +167,11 @@ class Integrator:
         self.counter += 1
 
     def run(self):
-        while not rospy.is_shutdown():
-            integrator.cube()
+        #while not rospy.is_shutdown():
+        integrator.cube()
             #integrator.plane()
 
-            pass
+            #pass
 
     def __init__(self):
         rospy.loginfo("Integrator started")

@@ -1,0 +1,7 @@
+<launch>
+  <node pkg="tf2_ros" type="static_transform_publisher" name="paper_calipen_broadcaster" 
+  args = "0.704301845459204, -0.04111121173355754, 0.08057177895481633, -0.1337739841973873, -0.013932730896978662, -0.9906318621228257, 0.023641360129491813 world panda_link0" output="screen">
+  </node>
+</launch>
+
+<!-- Disable (comment out) equivalent line in franka emika panda's launch file -->
