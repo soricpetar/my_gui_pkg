@@ -67,7 +67,7 @@ class KalipenController:
 
         quaternion = quaternions.mat2quat(rotation_matrix)
 
-        print(f"{t2[0]}, {t2[1]}, {t2[2]}, {quaternion[1]}, {quaternion[2]}, {quaternion[3]}, {quaternion[0]} world base_link 100" )
+        print(f"{translation_vector[0]}, {translation_vector[1]}, {translation_vector[2]}, {quaternion[1]}, {quaternion[2]}, {quaternion[3]}, {quaternion[0]} world base_link 100" )
 
         return transformation_matrix
 
