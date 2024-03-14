@@ -1,6 +1,6 @@
 <launch>
   <node pkg="my_gui_pkg" type="ControllerNode.py" name="ControllerNode" output="screen">
   </node>
-  <node pkg="my_gui_pkg" type="gui_node.py" name="mainwindow" output="screen">
+  <node pkg="my_gui_pkg" type="GuiNode.py" name="mainwindow" output="screen">
   </node>
 </launch>

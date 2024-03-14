@@ -10,7 +10,7 @@ import moveit_commander
 
 from my_gui_pkg.srv import ChangeState, ChangeStateResponse, ChangeStateRequest
 from my_gui_pkg.msg import service_req
-from my_gui_pkg.src.scripts.calibrationAlgo import pose_to_T, CalculateCalipenTransformation, T_to_pose
+from calibrationAlgo import pose_to_T, CalculateCalipenTransformation, T_to_pose
 
 import numpy as np
 
@@ -29,19 +29,25 @@ class Controller:
         self.click_cnt = 0
         #self.scene = moveit_commander.PlanningSceneInterface()
         self.points = []
-        self.num_of_callibration_points = 750
+        self.num_of_callibration_points = 100
         self.callibration_data_poses = list()
         self.callibration_index = 0
         self.callibration_data_collected_flag = False
         self.T_callibrated = []
-        #self.T_callibrated = np.array([
-        #        [1.0, 0.0, 0.0, 0.00332365],
-        #        [0.0, 1.0, 0.0, 0.04175276],
-        #        [0.0, 0.0, 1.0, -0.0260784],
-        #        [0.0, 0.0, 0.0, 1.0]
-        #        ])
+        self.index_every_ten = 0
+        #self.T_callibrated = np.array([[ 1,         0,          0,        -0.03044097],
+#                                [ 0,          1,          0,          0.02465285],
+ #                               [ 0,          0,          1,          0.11008679],
+  #                              [ 0,          0,          0,          1.        ]])
+
+        self.T_callibrated = np.array([[ 1, 0,          0, -0.00610281],
+                                        [ 0,          1,          0,          0.0124856 ],
+                                        [ 0,          0,          1,         -0.11657636],
+                                        [ 0,          0,          0,          1        ]])
+
+
         self.callibration_done_flag = True
-        self.callibration_done_flag = False
+        #self.callibration_done_flag = False
         self.pose_transformed = Pose()
         self.start_calib_flag = False
 
@@ -53,9 +59,16 @@ class Controller:
             self.transformed_pose_publisher.publish(self.pose_transformed)
          
         if self.current_state == 0 and not(self.callibration_data_collected_flag) and self.start_calib_flag:
-            self.callibration_data_poses.append(pose_to_T(self.pose))
-            self.callibration_index = self.callibration_index  + 1
-            print(self.callibration_index)
+            if self.index_every_ten == 0:
+                self.callibration_data_poses.append(pose_to_T(self.pose))
+                self.callibration_index = self.callibration_index  + 1
+                print(self.callibration_index)
+                self.index_every_ten += 1
+            elif self.index_every_ten < 5:
+                self.index_every_ten += 1
+            else:
+                self.index_every_ten = 0
+                
             
         if self.callibration_index >= self.num_of_callibration_points:
             self.callibration_data_collected_flag = True
@@ -125,6 +138,8 @@ class KalipenController:
 
         self.collect = False
         self.points = PointCloud()
+        #self.points.header.frame_id = "world"
+       
 
     def run(self):
         while not rospy.is_shutdown() and not shutdown_flag.is_set():
