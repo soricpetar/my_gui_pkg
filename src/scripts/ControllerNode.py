@@ -10,50 +10,140 @@ import moveit_commander
 
 from my_gui_pkg.srv import ChangeState, ChangeStateResponse, ChangeStateRequest
 from my_gui_pkg.msg import service_req
-from calibrationAlgo import pose_to_T, CalculateCalipenTransformation, T_to_pose
-
+from calibrationAlgo import pose_to_T, CalculateCalipenTransformation, T_to_pose, pose_to_T2
+import random
+import tf
 import numpy as np
+
+def select_n_percent_randomly(input_list, percent):
+    
+    selected_elements = random.sample(input_list, int(len(input_list)*percent))
+    
+    return selected_elements
 
 shutdown_flag = threading.Event()
 class Controller:
     def __init__(self):
+        
+        self.callibration_done_flag = True
+        
+        
+        self.transformation_base_world_pose = Pose()
+        init_pose =[0.23668295204321518, -0.326499091896756, -0.009526641608245269, 0.005814375725405096, 0.003291013506651619, -0.7084345080818157, 0.7057449326944534 ]
+        self.transformation_base_world_pose.position.x = init_pose[0]
+        self.transformation_base_world_pose.position.y = init_pose[1]
+        self.transformation_base_world_pose.position.z = init_pose[2]
+        self.transformation_base_world_pose.orientation.x = init_pose[3]
+        self.transformation_base_world_pose.orientation.y = init_pose[4]
+        self.transformation_base_world_pose.orientation.z = init_pose[5]
+        self.transformation_base_world_pose.orientation.w = init_pose[6]
+
+        self.base_world_transformation_flag = True
+        self.transformation_matrix_base_world = pose_to_T2(self.transformation_base_world_pose)
+        #self.transformation_matrix_base_world = []
+        
+        self.current_state = 2
+        self.clicked = 0
+        self.click_cnt = 0
+        #self.scene = moveit_commander.PlanningSceneInterface()
+        self.points = []
+        self.num_of_callibration_points = 150   
+        self.callibration_data_poses = list()
+        self.callibration_index = 0
+        self.callibration_data_collected_flag = False
+        self.T_callibrated = []
+        self.index_every_ten = 0
+        
+        #self.base_world_transformation_flag = False
+
+        
+        
+        
+        R = np.asarray([[  1.0000000,  0.0000000,  0.0000000],
+        [0.0000000, -0.5984601, -0.8011526],
+            [0.0000000,  0.8011526, -0.5984601 ]])
+        self.T_rotation_z_axis = np.eye(4)
+        self.T_rotation_z_axis[:3, :3] = R
+        
+        self.T_callibrated = np.eye(4)
+        p = [-0.01331904,  0.0374956,  -0.10462651]
+        self.T_callibrated[:3, 3] = p
+        
+        #self.T_callibrated = self.T_callibrated @ self.T_rotation_z_axis
+        #self.T_callibrated = []
+        
+        #print(self.T_callibrated)
+        #self.callibration_done_flag = False
+        self.pose_transformed = Pose()
+        self.start_calib_flag = False
+        print("init done")
+        self.pose_base_frame = Pose()
+        
+        self.transformed_pose_publisher_base_frame = rospy.Publisher('/Kalipen/pose_transformed_base_frame', Pose, queue_size=1)
         rospy.loginfo("Main Controller started")
         #self.kalipen_sub = rospy.Subscriber('/kalipen/joy', Joy, self.click_callback, queue_size=1)
         self.optitrack_sub = rospy.Subscriber('/vrpn_client_node/Kalipen/pose', PoseStamped, self.pose_callback, queue_size=1)
         self.state_pub = rospy.Publisher('state', service_req, queue_size=1)
         self.change_state_service = rospy.Service('change_state', ChangeState, self.handle_change_state)
         self.transformed_pose_publisher = rospy.Publisher('/Kalipen/pose_transformed', Pose, queue_size=1)
+        self.base_pose_transform = rospy.Subscriber('/base_transform', Pose, self.base_pose_callback, queue_size=1)
 
-        self.current_state = 2
-        self.clicked = 0
-        self.click_cnt = 0
-        #self.scene = moveit_commander.PlanningSceneInterface()
-        self.points = []
-        self.num_of_callibration_points = 100
-        self.callibration_data_poses = list()
-        self.callibration_index = 0
-        self.callibration_data_collected_flag = False
-        self.T_callibrated = []
-        self.index_every_ten = 0
+        
+        
+        
+
+        
         #self.T_callibrated = np.array([[ 1,         0,          0,        -0.03044097],
 #                                [ 0,          1,          0,          0.02465285],
  #                               [ 0,          0,          1,          0.11008679],
   #                              [ 0,          0,          0,          1.        ]])
 
-        self.T_callibrated = np.array([[ 1, 0,          0, -0.00610281],
-                                        [ 0,          1,          0,          0.0124856 ],
-                                        [ 0,          0,          1,         -0.11657636],
-                                        [ 0,          0,          0,          1        ]])
+        #self.T_callibrated = np.array([[ 1,          0,          0,          0.01476802],
+         #                                [ 0,          1,          0,          0.01544898],
+          #                              [ 0,          0,          1,         -0.12788964],
+           #                             [ 0,          0,          0,          1        ]])
 
+        
+        #self.T_callibrated = np.array([[ 1,          0,          0,          0.02483059],
+#[ 0,          1,          0,         -0.02899665],
+#[ 0,          0,          1,         -0.10057143],
+#[ 0,          0,          0,          1        ]])
+#        self.T_callibrated = np.array([[ 1,          0,          0,         -0.01312962],
+# [ 0,          1,          0,          0.03572815]
+# [ 0,         0,          1,         -0.10387493]
+# [ 0,          0,          0,          1        ]])
 
-        self.callibration_done_flag = True
-        #self.callibration_done_flag = False
-        self.pose_transformed = Pose()
-        self.start_calib_flag = False
+       # self.T_callibrated = np.array([[ 1,          0,          0,         -0.01264872],
+ #[ 0,          1,          0,          0.03858286],
+ #[ 0,          0,          1,         -0.10459109],
+ #[ 0,          0,          0,          1.        ]])
 
+        
+        
+    def base_pose_callback(self, pose):
+        if not(self.base_world_transformation_flag):
+            self.transformation_matrix_base_world = pose_to_T2(pose)
+            self.base_world_transformation_flag = True
+            print(self.transformation_matrix_base_world)
+            print("Primio sam info o bazi")
+        
     def pose_callback(self, poseStamp: PoseStamped):
         
         self.pose = poseStamp
+        
+        if self.callibration_done_flag and self.base_world_transformation_flag:
+            ##Kada se ubaci baza i olovka je kalibrirana, šalji poze u bazi robota
+            
+            self.pose_base_frame = T_to_pose(np.linalg.inv(self.transformation_matrix_base_world) @ pose_to_T2(self.pose_transformed))
+            self.transformed_pose_publisher_base_frame.publish(self.pose_base_frame)
+            
+            br = tf.TransformBroadcaster()
+            br.sendTransform((self.pose_base_frame.position.x, self.pose_base_frame.position.y, self.pose_base_frame.position.z),
+                     (self.pose_base_frame.orientation.x, self.pose_base_frame.orientation.y, self.pose_base_frame.orientation.z, self.pose_base_frame.orientation.w),
+                     rospy.Time.now(),
+                     "kalipen_tip_base_frame",
+                     "panda_link0")
+        
         if self.callibration_done_flag:
             self.pose_transformed= T_to_pose(pose_to_T(self.pose) @ self.T_callibrated)
             self.transformed_pose_publisher.publish(self.pose_transformed)
@@ -92,6 +182,7 @@ class Controller:
             if self.current_state == 0:
                 if self.callibration_data_collected_flag and not(self.callibration_done_flag):
                     print("Calibration has started")
+                    #self.callibration_data_poses = select_n_percent_randomly(self.callibration_data_poses, 0.15)
                     self.T_callibrated = CalculateCalipenTransformation(self.callibration_data_poses)
                     print(self.T_callibrated)
                     rospy.loginfo("Calibration completed")

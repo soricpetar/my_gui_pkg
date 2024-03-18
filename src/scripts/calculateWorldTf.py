@@ -23,9 +23,10 @@ class KalipenController:
         rospy.Subscriber('/Kalipen/pose_transformed', Pose, self.pose_callback, queue_size=1)
         rospy.Subscriber('/kalipen/joy', Joy, self.click_callback, queue_size=1)
         #self.tf_pub = rospy.Publisher('/static_tf', np.ndarray(), queue_size = 1)
+        self.pub = rospy.Publisher('/base_transform', Pose, queue_size=1)
         self.rate = rospy.Rate(100)
         self.point_cnt = 0
-
+        self.base_transformation_pose = Pose()
         self.collect = False
         self.points = list()
         self.transformation_matrix = None
@@ -50,23 +51,36 @@ class KalipenController:
         # Construct rotation matrix
         rotation_matrix = np.vstack([x_axis_normalized, y_axis_normalized, z_axis_normalized]).T
 
-        rot2 = np.vstack([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])
+        #rot2 = np.vstack([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])
 
-        print(rotation_matrix)
-        rotation_matrix = rotation_matrix @ rot2
+        #print(rotation_matrix)
+        #rotation_matrix = rotation_matrix @ rot2
 
         print(rotation_matrix)
 
         # Construct translation vector
-        translation_vector = t1 + x_axis/2 + y_axis
+        translation_vector = t1 + x_axis + y_axis / 2
 
         # Construct the transformation matrix
         transformation_matrix = np.identity(4)
         transformation_matrix[:3, :3] = rotation_matrix
         transformation_matrix[:3, 3] = translation_vector
 
+
+        
         quaternion = quaternions.mat2quat(rotation_matrix)
 
+        self.base_transformation_pose.position.x = translation_vector[0]
+        self.base_transformation_pose.position.y = translation_vector[1]
+        self.base_transformation_pose.position.z = translation_vector[2]
+        
+        self.base_transformation_pose.orientation.w = quaternion[0]
+        self.base_transformation_pose.orientation.x = quaternion[1]
+        self.base_transformation_pose.orientation.y = quaternion[2]
+        self.base_transformation_pose.orientation.z = quaternion[3]
+
+        self.pub.publish(self.base_transformation_pose)
+            
         print(f"{translation_vector[0]}, {translation_vector[1]}, {translation_vector[2]}, {quaternion[1]}, {quaternion[2]}, {quaternion[3]}, {quaternion[0]} world base_link 100" )
 
         return transformation_matrix
@@ -81,6 +95,7 @@ class KalipenController:
                 self.transformation_matrix = self.calculate_transformation_matrix(self.points[0], self.points[1], self.points[2])
                 self.quaternion = Rotation.as_quat(Rotation.from_matrix(self.transformation_matrix[:3,:3]))
                 self.transformation_matrix_calculated_flag = True
+                #self.pub.publish(self.transformation_matrix)
 
     def click_callback(self, click: Joy):
         #rospy.loginfo("click_callback")

@@ -26,10 +26,37 @@ def T_to_pose(T):
     pose.position.x = T[0][3]
     pose.position.y = T[1][3]
     pose.position.z = T[2][3]
-
+    
+    R = T[:3, :3]
+    quat = mat2quat(R)
+    pose.orientation.x = quat[1]
+    pose.orientation.y = quat[2]
+    pose.orientation.z = quat[3]
+    pose.orientation.w = quat[0]
+    
     return pose
 
-def pose_to_T(poseStamp : PoseStamped):
+def pose_to_T2(pose):
+    
+    q1 = pose.orientation.x
+    q2 = pose.orientation.y
+    q3 = pose.orientation.z
+    q4 = pose.orientation.w
+    x = pose.position.x
+    y = pose.position.y
+    z = pose.position.z
+    R = quat2mat([q4, q1, q2, q3])
+    
+    T = np.zeros([4, 4])
+    T[:3, :3] = R
+    T[0, 3] = x
+    T[1, 3] = y
+    T[2, 3] = z
+    T[3, 3] = 1
+    return T
+
+    
+def pose_to_T(poseStamp: PoseStamped):
 
     pose = poseStamp.pose
     q1 = pose.orientation.x
@@ -39,7 +66,7 @@ def pose_to_T(poseStamp : PoseStamped):
     x = pose.position.x
     y = pose.position.y
     z = pose.position.z
-    R = quat2mat([q1, q2, q3, q4])
+    R = quat2mat([q4, q1, q2, q3])
     
     T = np.zeros([4, 4])
     T[:3, :3] = R
@@ -48,6 +75,8 @@ def pose_to_T(poseStamp : PoseStamped):
     T[2, 3] = z
     T[3, 3] = 1
     return T
+
+
 def select_points(T0A):
     tol = 0.005
     T_good = []
@@ -72,7 +101,7 @@ def select_points(T0A):
     return T_good
                 
 
-def objectiveFunPosition(P, R, T_data):
+def objectiveFunPosition(p, R, T_data):
     """
     Optimization for position
     """
@@ -83,22 +112,19 @@ def objectiveFunPosition(P, R, T_data):
     f.close()
     
     #T0A = select_points(T0A)
-    
+    # Initial supposed transform
     Tx = np.eye(4)
     Tx[:3, :3] = R
-    Tx[:3, 3] = P
+    Tx[:3, 3] = p
 
     num_of_mesurs = len(T0A)  # holds the number of measurements
     f = 0  # optimization function value initialized to 0
-    print(num_of_mesurs)
-
     for i in range(0, num_of_mesurs):
-        T0o1_old = np.matmul(T0A[i], Tx) 
+        T_OI = np.matmul(T0A[i], Tx) 
         for j in range(0, num_of_mesurs):
-            T0o1 = np.matmul(T0A[j], Tx) 
-            p = T0o1[:3, 3] - T0o1_old[:3, 3]
-            #print(p)
-            f += np.linalg.norm(p)  # Euclidean distance
+            T_OJ = np.matmul(T0A[j], Tx) 
+            p_ = T_OI[:3, 3] - T_OJ[:3, 3]
+            f += np.linalg.norm(p_)  # Euclidean distance
     print(f)
     return f
 
@@ -109,7 +135,7 @@ def f_optimizePointOrientation(T_init, callibration_data_poses):
     P1 = T_init[:3, 3]   # Initial position vector
 
     # Optimize position using fmin
-    P1_optimized = fmin(func=objectiveFunPosition, x0=P1, args=(R1, callibration_data_poses), xtol=1e-5, ftol=1e-5,  disp=True)
+    P1_optimized = fmin(func=objectiveFunPosition, x0=np.array([0,0,-0.12]), args=(R1, callibration_data_poses), xtol=1e-10, ftol=1e-10,  disp=True)
 
     print("optimization finished")
     print(P1_optimized)
@@ -120,7 +146,7 @@ def f_optimizePointOrientation(T_init, callibration_data_poses):
 
 def CalculateCalipenTransformation(callibration_data_poses):
         T_init = np.eye(4, 4)
-        #T_init[2,3] = 0.13
+        T_init[2,3] = -0.12
         print(T_init)
         T = f_optimizePointOrientation(T_init, callibration_data_poses)
         return T

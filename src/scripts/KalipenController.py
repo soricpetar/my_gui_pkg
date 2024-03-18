@@ -24,7 +24,7 @@ class Controller:
         rospy.Subscriber('/Kalipen/pose_transformed', PoseStamped, self.pose_callback, queue_size=1)
         rospy.Subscriber('/kalipen/joy', Joy, self.click_callback, queue_size=1)
         self.pub = rospy.Publisher('/obstacle', PointCloud, queue_size=10)
-
+        
         self.rate = rospy.Rate(100)
 
         self.collect = False
