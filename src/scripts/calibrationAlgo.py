@@ -151,15 +151,3 @@ def CalculateCalipenTransformation(callibration_data_poses):
         T = f_optimizePointOrientation(T_init, callibration_data_poses)
         return T
 
-if __name__ == '__main__':
-    try:
-        rospy.init_node('CallipenCalibration', anonymous=False)
-        #rate = rospy.Rate(10)
-        controller = CallipenCalibration()
-        controller.run()
-        #rate.sleep()
-          
-    except rospy.ROSInterruptException:
-        pass
-    
-    

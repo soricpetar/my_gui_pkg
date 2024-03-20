@@ -184,6 +184,7 @@ class Integrator:
             #data_uncenterd = data + 10
             #data = data_uncenterd - centroid
 
+            print("data")
             print(data_uncenterd)
             centroid = np.mean(data_uncenterd, axis=0)
             print("Centroid: ", centroid)
@@ -279,7 +280,7 @@ class Integrator:
             dim3 = max_distances[0]
 
             box_pose = PoseStamped()
-            box_pose.header.frame_id = "world"
+            box_pose.header.frame_id = "panda_link0"
             box_pose.pose.position.x = centroid[0] 
             box_pose.pose.position.y = centroid[1]
             box_pose.pose.position.z = centroid[2] 
@@ -297,26 +298,26 @@ class Integrator:
             self.scene.add_box(box_name, box_pose, size=(dim1, dim2, dim3))
             
             box_pose_0 = PoseStamped()
-            box_pose_0.header.frame_id = "world"
+            box_pose_0.header.frame_id = "panda_link0"
             box_pose_0.pose.position.x = x_axis[0]*1+centroid[0]
             box_pose_0.pose.position.y = x_axis[1]*1+centroid[1]
             box_pose_0.pose.position.z = x_axis[2]*1+centroid[2]
 
 
             box_pose_1 = PoseStamped()
-            box_pose_1.header.frame_id = "world"
+            box_pose_1.header.frame_id = "panda_link0"
             box_pose_1.pose.position.x = y_axis[0]*1+centroid[0]
             box_pose_1.pose.position.y = y_axis[1]*1+centroid[1]
             box_pose_1.pose.position.z = y_axis[2]*1+centroid[2]
 
             box_pose_2 = PoseStamped()
-            box_pose_2.header.frame_id = "world"
+            box_pose_2.header.frame_id = "panda_link0"
             box_pose_2.pose.position.x = z_axis[0]*1+centroid[0]
             box_pose_2.pose.position.y = z_axis[1]*1+centroid[1]
             box_pose_2.pose.position.z = z_axis[2]*1+centroid[2]
 
             box_pose_3 = PoseStamped()
-            box_pose_3.header.frame_id = "world"
+            box_pose_3.header.frame_id = "panda_link0"
             box_pose_3.pose.position.x = centroid[0]
             box_pose_3.pose.position.y = centroid[1]
             box_pose_3.pose.position.z = centroid[2]

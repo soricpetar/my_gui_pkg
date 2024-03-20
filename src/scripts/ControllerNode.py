@@ -27,36 +27,45 @@ class Controller:
         
         self.callibration_done_flag = True
         
+        self.pose_uspravan_kalipen = Pose()
+        pose_uspravan_kalipen_data = [0.035963281989097595, -0.026786623522639275, 0.10383842140436172, 0.005067373625934124, -0.04354311153292656, 0.03520729020237923, -0.9984182119369507]
+        self.pose_uspravan_kalipen.position.x = pose_uspravan_kalipen_data[0]
+        self.pose_uspravan_kalipen.position.y = pose_uspravan_kalipen_data[1]
+        self.pose_uspravan_kalipen.position.z = pose_uspravan_kalipen_data[2]
+        self.pose_uspravan_kalipen.orientation.x = pose_uspravan_kalipen_data[3]
+        self.pose_uspravan_kalipen.orientation.y = pose_uspravan_kalipen_data[4]
+        self.pose_uspravan_kalipen.orientation.z = pose_uspravan_kalipen_data[5]
+        self.pose_uspravan_kalipen.orientation.w = pose_uspravan_kalipen_data[6]
+        self.HRM_uspravan_kalipen = pose_to_T2(self.pose_uspravan_kalipen)[:3, :3]
         
-        self.transformation_base_world_pose = Pose()
-        init_pose =[0.23668295204321518, -0.326499091896756, -0.009526641608245269, 0.005814375725405096, 0.003291013506651619, -0.7084345080818157, 0.7057449326944534 ]
-        self.transformation_base_world_pose.position.x = init_pose[0]
-        self.transformation_base_world_pose.position.y = init_pose[1]
-        self.transformation_base_world_pose.position.z = init_pose[2]
-        self.transformation_base_world_pose.orientation.x = init_pose[3]
-        self.transformation_base_world_pose.orientation.y = init_pose[4]
-        self.transformation_base_world_pose.orientation.z = init_pose[5]
-        self.transformation_base_world_pose.orientation.w = init_pose[6]
-
+        
+        self.pose_world_RobBase = Pose()
+        init_pose =[0.23856316707049918, -0.33204339495076574, -0.010659005975835606, 0.006143818675972602, 0.0019487196114981176, -0.7077568227537544, 0.7064267377651152]
+        self.pose_world_RobBase.position.x = init_pose[0]
+        self.pose_world_RobBase.position.y = init_pose[1]
+        self.pose_world_RobBase.position.z = init_pose[2]
+        self.pose_world_RobBase.orientation.x = init_pose[3]
+        self.pose_world_RobBase.orientation.y = init_pose[4]
+        self.pose_world_RobBase.orientation.z = init_pose[5]
+        self.pose_world_RobBase.orientation.w = init_pose[6]
+        print(pose_to_T2(self.pose_world_RobBase))
         self.base_world_transformation_flag = True
-        self.transformation_matrix_base_world = pose_to_T2(self.transformation_base_world_pose)
-        #self.transformation_matrix_base_world = []
+        self.HTM_world_RobBase = pose_to_T2(self.pose_world_RobBase)
+        #self.HTM_world_RobBase = []
         
         self.current_state = 2
         self.clicked = 0
         self.click_cnt = 0
         #self.scene = moveit_commander.PlanningSceneInterface()
         self.points = []
-        self.num_of_callibration_points = 150   
+        self.num_of_callibration_points = 250 
         self.callibration_data_poses = list()
         self.callibration_index = 0
         self.callibration_data_collected_flag = False
-        self.T_callibrated = []
+        #self.HTM_markers_tip = []
         self.index_every_ten = 0
         
         #self.base_world_transformation_flag = False
-
-        
         
         
         R = np.asarray([[  1.0000000,  0.0000000,  0.0000000],
@@ -65,19 +74,26 @@ class Controller:
         self.T_rotation_z_axis = np.eye(4)
         self.T_rotation_z_axis[:3, :3] = R
         
-        self.T_callibrated = np.eye(4)
-        p = [-0.01331904,  0.0374956,  -0.10462651]
-        self.T_callibrated[:3, 3] = p
+        self.HTM_markers_tip = np.eye(4)
+        p_novi = [-0.00021284,  0.01746014, -0.11275805]
+        p_novi2 = [ 0.00063477,  0.01756559, -0.11255395]
+
+        p = [ 5.08188885e-05,  1.72423165e-02, -1.12748549e-01]
+        self.HTM_markers_tip[:3, 3] = p_novi2
         
-        #self.T_callibrated = self.T_callibrated @ self.T_rotation_z_axis
-        #self.T_callibrated = []
+        #self.HTM_markers_tip = self.HTM_markers_tip @ self.T_rotation_z_axis
+        #self.HTM_markers_tip = []
         
-        #print(self.T_callibrated)
+        #print(self.HTM_markers_tip)
         #self.callibration_done_flag = False
-        self.pose_transformed = Pose()
+        self.pose_world_tip = Pose()
         self.start_calib_flag = False
         print("init done")
-        self.pose_base_frame = Pose()
+        self.pose_base_tip = Pose()
+        
+        pomocni_R_umjeren = np.linalg.inv(self.HRM_uspravan_kalipen) @ np.array([[1,0,0],[0,-1,0],[0,0,-1]])
+        self.HTM_markers_tip[:3, :3] = pomocni_R_umjeren
+        
         
         self.transformed_pose_publisher_base_frame = rospy.Publisher('/Kalipen/pose_transformed_base_frame', Pose, queue_size=1)
         rospy.loginfo("Main Controller started")
@@ -90,30 +106,37 @@ class Controller:
 
         
         
+        self.HFM_martin_postolje = np.array([[-0.157037,   0.0763709,   -0.984639,    0.22835],
+                                [-0.98758, -0.00584242,    0.157051,   -0.327125],
+                                [0.0062433,    0.997066,   0.0763389,  -0.0104712],
+                                [0,           0,           0,           1]])
         
+        self.pose_HFM_martin_postolje = T_to_pose(self.HFM_martin_postolje)
+        
+        print(np.linalg.inv(self.HFM_martin_postolje))
 
         
-        #self.T_callibrated = np.array([[ 1,         0,          0,        -0.03044097],
+        #self.HTM_markers_tip = np.array([[ 1,         0,          0,        -0.03044097],
 #                                [ 0,          1,          0,          0.02465285],
  #                               [ 0,          0,          1,          0.11008679],
   #                              [ 0,          0,          0,          1.        ]])
 
-        #self.T_callibrated = np.array([[ 1,          0,          0,          0.01476802],
+        #self.HTM_markers_tip = np.array([[ 1,          0,          0,          0.01476802],
          #                                [ 0,          1,          0,          0.01544898],
           #                              [ 0,          0,          1,         -0.12788964],
            #                             [ 0,          0,          0,          1        ]])
 
         
-        #self.T_callibrated = np.array([[ 1,          0,          0,          0.02483059],
+        #self.HTM_markers_tip = np.array([[ 1,          0,          0,          0.02483059],
 #[ 0,          1,          0,         -0.02899665],
 #[ 0,          0,          1,         -0.10057143],
 #[ 0,          0,          0,          1        ]])
-#        self.T_callibrated = np.array([[ 1,          0,          0,         -0.01312962],
+#        self.HTM_markers_tip = np.array([[ 1,          0,          0,         -0.01312962],
 # [ 0,          1,          0,          0.03572815]
 # [ 0,         0,          1,         -0.10387493]
 # [ 0,          0,          0,          1        ]])
 
-       # self.T_callibrated = np.array([[ 1,          0,          0,         -0.01264872],
+       # self.HTM_markers_tip = np.array([[ 1,          0,          0,         -0.01264872],
  #[ 0,          1,          0,          0.03858286],
  #[ 0,          0,          1,         -0.10459109],
  #[ 0,          0,          0,          1.        ]])
@@ -122,9 +145,9 @@ class Controller:
         
     def base_pose_callback(self, pose):
         if not(self.base_world_transformation_flag):
-            self.transformation_matrix_base_world = pose_to_T2(pose)
+            self.HTM_world_RobBase = pose_to_T2(pose)
             self.base_world_transformation_flag = True
-            print(self.transformation_matrix_base_world)
+            print(self.HTM_world_RobBase)
             print("Primio sam info o bazi")
         
     def pose_callback(self, poseStamp: PoseStamped):
@@ -134,19 +157,31 @@ class Controller:
         if self.callibration_done_flag and self.base_world_transformation_flag:
             ##Kada se ubaci baza i olovka je kalibrirana, šalji poze u bazi robota
             
-            self.pose_base_frame = T_to_pose(np.linalg.inv(self.transformation_matrix_base_world) @ pose_to_T2(self.pose_transformed))
-            self.transformed_pose_publisher_base_frame.publish(self.pose_base_frame)
+            
+            
+            #self.pose_base_tip = T_to_pose(np.linalg.inv(self.HTM_world_RobBase) @ HTM_world_tip)
+            #self.transformed_pose_publisher_base_frame.publish(self.pose_base_tip)
+            
+            self.pose_base_tip = T_to_pose(np.linalg.inv(self.HTM_world_RobBase) @ pose_to_T2(self.pose_world_tip))
+            self.transformed_pose_publisher_base_frame.publish(self.pose_base_tip)
             
             br = tf.TransformBroadcaster()
-            br.sendTransform((self.pose_base_frame.position.x, self.pose_base_frame.position.y, self.pose_base_frame.position.z),
-                     (self.pose_base_frame.orientation.x, self.pose_base_frame.orientation.y, self.pose_base_frame.orientation.z, self.pose_base_frame.orientation.w),
+            br.sendTransform((self.pose_base_tip.position.x, self.pose_base_tip.position.y, self.pose_base_tip.position.z),
+                     (self.pose_base_tip.orientation.x, self.pose_base_tip.orientation.y, self.pose_base_tip.orientation.z, self.pose_base_tip.orientation.w),
                      rospy.Time.now(),
                      "kalipen_tip_base_frame",
                      "panda_link0")
+            
+           # br_martin = tf.TransformBroadcaster()
+            #br_martin.sendTransform((self.pose_HFM_martin_postolje.position.x, self.pose_HFM_martin_postolje.position.y, self.pose_HFM_martin_postolje.position.z),
+           #          (self.pose_HFM_martin_postolje.orientation.x, self.pose_HFM_martin_postolje.orientation.y, self.pose_HFM_martin_postolje.orientation.z, self.pose_HFM_martin_postolje.orientation.w),
+            #         rospy.Time.now(),
+            #         "martin",
+              #       "panda_link0")
         
         if self.callibration_done_flag:
-            self.pose_transformed= T_to_pose(pose_to_T(self.pose) @ self.T_callibrated)
-            self.transformed_pose_publisher.publish(self.pose_transformed)
+            self.pose_world_tip=  T_to_pose(pose_to_T(self.pose) @ self.HTM_markers_tip)
+            self.transformed_pose_publisher.publish(self.pose_world_tip)
          
         if self.current_state == 0 and not(self.callibration_data_collected_flag) and self.start_calib_flag:
             if self.index_every_ten == 0:
@@ -183,8 +218,8 @@ class Controller:
                 if self.callibration_data_collected_flag and not(self.callibration_done_flag):
                     print("Calibration has started")
                     #self.callibration_data_poses = select_n_percent_randomly(self.callibration_data_poses, 0.15)
-                    self.T_callibrated = CalculateCalipenTransformation(self.callibration_data_poses)
-                    print(self.T_callibrated)
+                    self.HTM_markers_tip = CalculateCalipenTransformation(self.callibration_data_poses)
+                    print(self.HTM_markers_tip)
                     rospy.loginfo("Calibration completed")
                     self.callibration_done_flag = True
             elif self.current_state == 1:  # collect
@@ -194,9 +229,10 @@ class Controller:
 
 
 class KalipenController: 
-    def pose_callback(self, pose: Pose):
+    def pose_callback2(self, pose: Pose):
         #rospy.loginfo(pose.pose)
         if(self.collect):
+            
             self.points.points.append(pose.position)
 
     def click_callback(self, click: Joy):
@@ -208,6 +244,7 @@ class KalipenController:
             else :
                 rospy.loginfo("click registered")
                 self.collect = True
+                print(self.collect)
                 self.masterController.handle_change_state(ChangeStateRequest(desired_state = 1))
 
         elif (click.buttons[0] == 0 and self.masterController.callibration_done_flag):
@@ -221,7 +258,7 @@ class KalipenController:
         self.masterController = MasterController
 
         rospy.loginfo("Kalipen Controller started")
-        rospy.Subscriber('/Kalipen/pose_transformed', Pose, self.pose_callback, queue_size=1)
+        rospy.Subscriber('/Kalipen/pose_transformed_base_frame', Pose, self.pose_callback2, queue_size=1)
         rospy.Subscriber('/kalipen/joy', Joy, self.click_callback, queue_size=1)
         self.pub = rospy.Publisher('/obstacle', PointCloud, queue_size=10)
 
@@ -229,7 +266,7 @@ class KalipenController:
 
         self.collect = False
         self.points = PointCloud()
-        #self.points.header.frame_id = "world"
+        self.points.header.frame_id = "panda_link0"
        
 
     def run(self):
