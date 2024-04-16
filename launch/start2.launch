@@ -1,17 +1,14 @@
 <launch>
   <!-- Launch GUI controller -->
-  <node pkg="optidraw" type="ControllerNode.py" name="ControllerNode" output="screen">
+  <node pkg="my_gui_pkg" type="ControllerNode.py" name="ControllerNode" output="screen">
   </node>
   <!-- Launch GUI -->
-  <node pkg="optidraw" type="gui_node.py" name="mainwindow" output="screen">
+  <node pkg="my_gui_pkg" type="GuiNode.py" name="mainwindow" output="screen">
   </node>
   <!-- Launch the plotting node -->
-  <node pkg="optidraw" type="obstacle_maker.py" name="obstaclenode">
+  <node pkg="my_gui_pkg" type="obstacleMaker.py" name="obstaclenode">
+  </node>
   <!-- Launch rviz -->
-  <node pkg="rviz" type="rviz" name="rviz"/>
-
+  <node pkg="rviz" type="rviz" name="rviz">
+  </node>
 </launch>
-
-
-
-    

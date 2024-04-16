@@ -281,7 +281,7 @@ class Integrator:
 
             box_pose = PoseStamped()
             box_pose.header.frame_id = "panda_link0"
-            box_pose.pose.position.x = centroid[0] 
+            box_pose.pose.position.x = centroid[0] + 0.01
             box_pose.pose.position.y = centroid[1]
             box_pose.pose.position.z = centroid[2] 
 

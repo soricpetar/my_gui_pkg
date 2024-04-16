@@ -1,0 +1,60 @@
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+# Sample data
+x1 = [ 0.5689410984773309, 0.5718456403551462, 0.5698641478338977, 0.5750897833500261, 0.5739575442381224]
+y1 = [0.21263720369856096, 0.034034177236320545, 0.02803127218603016, 0.03157058092895301, -0.16682676790688328]
+z1 = [0.9936259315324273, 1.0215841776484536, 0.8792704152026355, 0.8068478318074646, 0.9832835806587864]
+
+x2 = [0.5690506479058259, 0.5722143435804197, 0.5700191695378343, 0.5751444118405765, 0.5741750146790342]
+y2 = [0.21300248664069685, 0.034137927092333736, 0.028128411718464644, 0.03166255579647315, -0.16668925397635614]
+z2 = [0.9932755942246879, 1.0211499990830244, 0.8791412127303998, 0.806796415311513, 0.9829968356555119]
+
+labels1 = ['A_kalip', 'B__kalip', 'C_kalip', 'E_kalip', 'F_kalip']
+labels2 = ['A_rob', 'B_rob', 'C_rob', 'E_rob', 'F_rob']
+
+# Plotting
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+
+# Plotting points and labeling
+for i in range(len(x1)):
+    ax.scatter(x1[i], y1[i], z1[i], c='b', label='Set 1')
+    ax.text(x1[i], y1[i], z1[i], labels1[i], color='black')
+
+for i in range(len(x2)):
+    ax.scatter(x2[i], y2[i], z2[i], c='r', label='Set 2')
+    ax.text(x2[i], y2[i], z2[i], labels2[i], color='black')
+
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_zlabel('Z')
+
+RMS_euclid = []
+for i in range(len(x1)):
+    d = ((x1[i]- x2[i])**2 + (y1[i]- y2[i])**2+ (z1[i]- z2[i])**2)**0.5
+    RMS_euclid.append(d)
+
+print(RMS_euclid)
+
+
+
+
+
+
+
+plt.show()
+
+y_values = [x * 1000 for x in RMS_euclid]
+x_labels = ['A', 'B', 'C', 'E', 'F']
+
+# Plotting
+plt.plot(x_labels, y_values, marker='o', linestyle='-')
+
+# Labeling axes
+plt.xlabel('Point names')
+plt.ylabel('RMS / mm')
+plt.title('Euclidian Distances between Kalipen and Robot positions')
+
+plt.grid(True)  # Adding grid for better visualization
+plt.show()
