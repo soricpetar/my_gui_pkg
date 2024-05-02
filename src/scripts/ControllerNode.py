@@ -25,23 +25,16 @@ def select_n_percent_randomly(input_list, percent):
 shutdown_flag = threading.Event()
 class Controller:
     def __init__(self):
-        
-        
-        #self.callibration_done_flag = False
-        self.callibration_done_flag = True
-        #self.HTM_markers_tip = []
-        
-        
+   
         self.pose_uspravan_kalipen = Pose()
         pose_uspravan_kalipen_data = [0,0,0,
-                        -0.020395474508404732,
-                        0.02798849530518055,
-                        -0.0714760273694992,
-                        0.9968409538269043
-]
+                                      0.27241307497024536,
+                                      -0.2856120765209198,
+                                      0.22519317269325256,
+                                      -0.8907889723777771]
 
 
-
+ 
 
         self.pose_uspravan_kalipen.position.x = pose_uspravan_kalipen_data[0]
         self.pose_uspravan_kalipen.position.y = pose_uspravan_kalipen_data[1]
@@ -52,12 +45,19 @@ class Controller:
         self.pose_uspravan_kalipen.orientation.w = pose_uspravan_kalipen_data[6]
         self.HRM_uspravan_kalipen = pose_to_T2(self.pose_uspravan_kalipen)[:3, :3]
         
+        #Base correction results from scrip skripta_base_correction.py after the data is recorded with send_to_kalip.py node and pressing Y on the controller. 
+        #dx_mean = -0.009792084986739976
+        #dy_mean = 0.008677669932059422
+        #dz_mean = -0.008434708659900552
         
         self.pose_world_RobBase = Pose()
         #init_pose =[0.23856316707049918, -0.33204339495076574, -0.010659005975835606, 0.006143818675972602, 0.0019487196114981176, -0.7077568227537544, 0.7064267377651152]
-        init_pose = [0.2371031409749822, -0.3330227421702078, -0.01414638698610974, 0.008017265894388843, 0.006337865577115798, -0.7072979360535199, 0.7068416969604553]
-        init_pose_martin = [0.2396548092365265,-0.32984429597854614,-0.007079588249325752, -0.00026624090456983267,0.008395756591080172,-0.711365005270696, 0.7027764115236969]
-        #init_pose = init_pose_martin
+
+        #init_pose is copied from calculateWorldtf.py
+        init_pose = [0.2334130457262035, -0.3307584653149515, -0.013553986359757283, 0.006163629680345604, 0.004749065070437486, -0.7071828560556807, 0.7069878811910785]
+        #init_pose_with_corrections = [init_pose[0] + dy_mean , init_pose[1] - dx_mean, init_pose[2] + dz_mean, init_pose[3], init_pose[4], init_pose[5], init_pose[6]]
+
+        #init_pose = init_pose_with_corrections
         self.pose_world_RobBase.position.x = init_pose[0]
         self.pose_world_RobBase.position.y = init_pose[1]
         self.pose_world_RobBase.position.z = init_pose[2]
@@ -87,8 +87,11 @@ class Controller:
 
         
         ## KALIBRACIJA
-        
-        self.HTM_markers_tip = np.eye(4)
+        ### Zakomentirati sve linije s ## kada se radi kalibracija a onda kada se ubaci p_ odkomentirati sve linije s ## i zakomentirati ove s #
+        self.callibration_done_flag = True ##
+        #self.callibration_done_flag = False#
+        #self.HTM_markers_tip = []#
+        self.HTM_markers_tip = np.eye(4) ##
         #p_novi = [-0.00021284,  0.01746014, -0.11275805]
         #p_novi2 = [ 0.00063477,  0.01756559, -0.11255395]
         #p_novi_84 = [-0.00033451,  0.01762509, -0.11303929]
@@ -96,15 +99,15 @@ class Controller:
         p_novi_104 = [-0.00086442,  0.01783513, -0.11258748]
         p_novi_114 = [-0.00069817,  0.01727256, -0.11318448]
         p_novi124 = [-0.00032653,  0.01764019, -0.11299233]
-        p_novi_164 = [-0.00031695,  0.01795485, -0.11307577]
-
-        #p = [ 5.08188885e-05,  1.72423165e-02, -1.12748549e-01]
-        self.HTM_markers_tip[:3, 3] = p_novi_164
+        #p_novi_164 = [-0.00031695,  0.01795485, -0.11307577]
+        p_novi_crni = [0.06157365,  0.09181658, -0.12091016]
+        p_novi_crni_25 = [0.06238251,  0.09057567,-0.11930533]
+        self.HTM_markers_tip[:3, 3] = p_novi_crni_25 ##
         
         
         
-        pomocni_R_umjeren = np.linalg.inv(self.HRM_uspravan_kalipen) @ np.array([[1,0,0],[0,-1,0],[0,0,-1]])
-        self.HTM_markers_tip[:3, :3] = pomocni_R_umjeren
+        pomocni_R_umjeren = np.linalg.inv(self.HRM_uspravan_kalipen) @ np.array([[1,0,0],[0,-1,0],[0,0,-1]]) ##
+        self.HTM_markers_tip[:3, :3] = pomocni_R_umjeren##
         
         
         ## END KALIBRACIJA
@@ -122,7 +125,7 @@ class Controller:
         self.transformed_pose_publisher_base_frame = rospy.Publisher('/Kalipen/pose_transformed_base_frame', Pose, queue_size=1)
         rospy.loginfo("Main Controller started")
         #self.kalipen_sub = rospy.Subscriber('/kalipen/joy', Joy, self.click_callback, queue_size=1)
-        self.optitrack_sub = rospy.Subscriber('/vrpn_client_node/Kalipen/pose', PoseStamped, self.pose_callback, queue_size=1)
+        self.optitrack_sub = rospy.Subscriber('/vrpn_client_node/KalipCrni/pose', PoseStamped, self.pose_callback, queue_size=1)
         self.state_pub = rospy.Publisher('state', service_req, queue_size=1)
         self.change_state_service = rospy.Service('change_state', ChangeState, self.handle_change_state)
         self.transformed_pose_publisher = rospy.Publisher('/Kalipen/pose_transformed', Pose, queue_size=1)
